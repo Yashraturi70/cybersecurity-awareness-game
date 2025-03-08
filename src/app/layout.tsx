@@ -8,6 +8,11 @@ import Navbar from './components/Navbar';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const metadata = {
+  title: 'Cybersecurity Awareness Game',
+  description: 'Learn cybersecurity through interactive challenges',
+};
+
 export default function RootLayout({
   children,
 }: {

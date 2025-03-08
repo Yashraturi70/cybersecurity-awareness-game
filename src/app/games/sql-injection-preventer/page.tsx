@@ -109,8 +109,8 @@ function getProducts(category: string | number): Promise<DBResponse> {
       code: `
 function searchUsers(searchTerm: string): Promise<DBResponse> {
   const query = \`SELECT * FROM users WHERE 
-    name LIKE '%${searchTerm}%' OR 
-    email LIKE '%${searchTerm}%'\`;
+    name LIKE '%\${searchTerm}%' OR 
+    email LIKE '%\${searchTerm}%'\`;
   return db.execute(query);
 }`,
       vulnerableQuery: "x%' OR SLEEP(5) OR '%",

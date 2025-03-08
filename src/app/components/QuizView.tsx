@@ -15,8 +15,8 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
   const [dragItems, setDragItems] = useState<string[]>([]);
   const [matches, setMatches] = useState<{ [key: number]: number }>({});
 
-  const handleAnswer = (answer: number | number[]) => {
-    setSelectedAnswer(answer);
+  const handleAnswer = (answer: number | number[] | boolean) => {
+    setSelectedAnswer(typeof answer === 'boolean' ? null : answer);
     setShowExplanation(true);
     let isCorrect = false;
 
@@ -26,11 +26,7 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
         isCorrect = answer === quiz.correctAnswer;
         break;
       case 'matching':
-        isCorrect = JSON.stringify(answer) === JSON.stringify(quiz.correctAnswer);
-        break;
       case 'drag_drop':
-        isCorrect = JSON.stringify(answer) === JSON.stringify(quiz.correctAnswer);
-        break;
       case 'spot_difference':
       case 'url_analyzer':
       case 'red_flags':
@@ -55,7 +51,7 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
     switch (quiz.type) {
       case 'mcq':
       case 'scenario':
-        return (
+        return quiz.options ? (
           <div className="space-y-3">
             {quiz.options.map((option, index) => (
               <button
@@ -81,10 +77,10 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
               </button>
             ))}
           </div>
-        );
+        ) : null;
 
       case 'matching':
-        return (
+        return quiz.options && quiz.matches ? (
           <div className="space-y-6">
             {quiz.options.map((option, index) => (
               <div key={index} className="flex items-center space-x-4">
@@ -114,10 +110,10 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
               </div>
             ))}
           </div>
-        );
+        ) : null;
 
       case 'drag_drop':
-        return (
+        return quiz.options ? (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -159,7 +155,7 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
               </div>
             </div>
           </div>
-        );
+        ) : null;
 
       case 'interactive':
         if (quiz.activity === 'password_builder') {
@@ -171,7 +167,7 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
                 placeholder="Type your password..."
                 onChange={(e) => {
                   const password = e.target.value;
-                  if (!quiz.requirements) return;
+                  if (!quiz.requirements?.length) return;
                   const meetsAll = quiz.requirements.every(req => {
                     switch (req) {
                       case 'Minimum 12 characters':
@@ -211,7 +207,6 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
 
   return (
     <div className="space-y-6">
-      {/* Interactive Question Card */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-semibold text-gray-900">{quiz.question}</h3>
@@ -235,7 +230,6 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
         {renderQuestion()}
       </div>
 
-      {/* Explanation Card */}
       {showExplanation && (
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center mb-4">
@@ -270,7 +264,6 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
         </div>
       )}
 
-      {/* Progress Indicator */}
       <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
         <div className="flex items-center justify-between text-gray-900">
           <span>Time remaining</span>

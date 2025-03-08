@@ -171,6 +171,7 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
                 placeholder="Type your password..."
                 onChange={(e) => {
                   const password = e.target.value;
+                  if (!quiz.requirements) return;
                   const meetsAll = quiz.requirements.every(req => {
                     switch (req) {
                       case 'Minimum 12 characters':
@@ -191,7 +192,7 @@ const QuizView: React.FC<QuizViewProps> = ({ quiz, onComplete }) => {
                 }}
               />
               <div className="space-y-2">
-                {quiz.requirements.map((req, index) => (
+                {quiz.requirements?.map((req, index) => (
                   <div key={index} className="flex items-center text-gray-900">
                     <span className="mr-2">⚪</span>
                     {req}

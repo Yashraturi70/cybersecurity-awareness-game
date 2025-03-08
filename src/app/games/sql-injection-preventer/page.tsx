@@ -106,11 +106,12 @@ function getProducts(category: string | number): Promise<DBResponse> {
       id: 3,
       type: "Blind SQL Injection",
       description: "This search function is vulnerable to blind SQL injection. Select the best fix:",
-      code: String.raw`
-function searchUsers(searchTerm: string): Promise<DBResponse> {
-  const query = \`SELECT * FROM users WHERE 
-    name LIKE '%\${searchTerm}%' OR 
-    email LIKE '%\${searchTerm}%'\`;
+      code: 
+`// Vulnerable to blind SQL injection
+function searchUsers(searchTerm) {
+  const query = "SELECT * FROM users WHERE " + 
+    "name LIKE '%" + searchTerm + "%' OR " + 
+    "email LIKE '%" + searchTerm + "%'";
   return db.execute(query);
 }`,
       vulnerableQuery: "x%' OR SLEEP(5) OR '%",

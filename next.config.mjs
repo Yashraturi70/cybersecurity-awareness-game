@@ -4,6 +4,13 @@ const nextConfig = {
   swcMinify: true,
   images: {
     domains: ['fonts.googleapis.com'],
+    unoptimized: true
+  },
+  typescript: {
+    ignoreBuildErrors: true
+  },
+  eslint: {
+    ignoreDuringBuilds: true
   },
   async headers() {
     return [

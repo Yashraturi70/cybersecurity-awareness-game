@@ -106,11 +106,11 @@ function getProducts(category: string | number): Promise<DBResponse> {
       id: 3,
       type: "Blind SQL Injection",
       description: "This search function is vulnerable to blind SQL injection. Select the best fix:",
-      code: `
+      code: String.raw`
 function searchUsers(searchTerm: string): Promise<DBResponse> {
-  const query = \\\`SELECT * FROM users WHERE 
+  const query = \`SELECT * FROM users WHERE 
     name LIKE '%\${searchTerm}%' OR 
-    email LIKE '%\${searchTerm}%'\\\`;
+    email LIKE '%\${searchTerm}%'\`;
   return db.execute(query);
 }`,
       vulnerableQuery: "x%' OR SLEEP(5) OR '%",
@@ -138,11 +138,11 @@ function searchUsers(searchTerm: string): Promise<DBResponse> {
       id: 4,
       type: "Mass Assignment",
       description: "This update function is vulnerable to mass assignment. Choose the secure implementation:",
-      code: `
+      code: String.raw`
 function updateUser(userId: number, userData: Record<string, any>): Promise<DBResponse> {
   const query = "UPDATE users SET " + 
-    Object.keys(userData).map(key => 
-      \\\`\${key}='\${userData[key]}'\\\`).join(',') + 
+    Object.keys(userData).map(k => 
+      \${k}='\${userData[k]}').join(',') + 
     " WHERE id = " + userId;
   return db.execute(query);
 }`,

@@ -3,11 +3,21 @@ import { Inter } from 'next/font/google';
 import { Metadata } from 'next';
 import ClientLayout from './ClientLayout';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: 'Cybersecurity Awareness Game',
   description: 'Learn cybersecurity through interactive challenges',
+  viewport: 'width=device-width, initial-scale=1',
+  themeColor: '#000000',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -16,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${inter.className} min-h-screen bg-white dark:bg-gray-900`}>
+    <html lang="en" className={`h-full ${inter.variable}`}>
+      <body className="min-h-screen bg-white dark:bg-gray-900">
         <ClientLayout>
           {children}
         </ClientLayout>

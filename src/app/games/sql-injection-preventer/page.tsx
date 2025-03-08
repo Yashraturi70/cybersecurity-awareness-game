@@ -141,8 +141,8 @@ function searchUsers(searchTerm: string): Promise<DBResponse> {
       code: String.raw`
 function updateUser(userId: number, userData: Record<string, any>): Promise<DBResponse> {
   const query = "UPDATE users SET " + 
-    Object.keys(userData).map(k => 
-      \${k}='\${userData[k]}').join(',') + 
+    Object.keys(userData).map(field => 
+      "\${field}='\${userData[field]}'").join(',') + 
     " WHERE id = " + userId;
   return db.execute(query);
 }`,

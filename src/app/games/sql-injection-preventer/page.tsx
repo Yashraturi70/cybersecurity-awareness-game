@@ -138,13 +138,14 @@ function searchUsers(searchTerm: string): Promise<DBResponse> {
       id: 4,
       type: "Mass Assignment",
       description: "This update function is vulnerable to mass assignment. Choose the secure implementation:",
-      code: `
-function updateUser(userId: number, userData: Record<string, any>): Promise<DBResponse> {
-  const query = "UPDATE users SET " + 
-    Object.keys(userData).map(function(field) {
-      return field + "='" + userData[field] + "'";
-    }).join(',') + 
-    " WHERE id = " + userId;
+      code: 
+`// Vulnerable to mass assignment attacks
+function updateUser(userId, userData) {
+  let setParts = [];
+  for (let field in userData) {
+    setParts.push(field + "='" + userData[field] + "'");
+  }
+  let query = "UPDATE users SET " + setParts.join(",") + " WHERE id=" + userId;
   return db.execute(query);
 }`,
       vulnerableQuery: "{'admin': true, 'role': 'superuser'}",

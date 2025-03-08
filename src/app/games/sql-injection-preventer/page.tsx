@@ -141,9 +141,16 @@ function searchUsers(searchTerm: string): Promise<DBResponse> {
       code: 
 `// Vulnerable to mass assignment attacks
 function updateUser(userId, userData) {
+  // TypeScript-safe approach would use:
+  // Object.keys(userData).map((key: string) => {
+  //   return key + "='" + (userData as Record<string, any>)[key] + "'";
+  // }).join(',');
+  
   let setParts = [];
   for (let field in userData) {
-    setParts.push(field + "='" + userData[field] + "'");
+    if (userData.hasOwnProperty(field)) {
+      setParts.push(field + "='" + userData[field] + "'");
+    }
   }
   let query = "UPDATE users SET " + setParts.join(",") + " WHERE id=" + userId;
   return db.execute(query);

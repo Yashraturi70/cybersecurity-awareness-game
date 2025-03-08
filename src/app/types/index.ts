@@ -38,6 +38,7 @@ export interface InteractiveQuiz extends BaseQuiz {
   type: 'interactive';
   activity: string;
   requirements?: string[];
+  elements?: string[];
   correctAnswer: any;
 }
 

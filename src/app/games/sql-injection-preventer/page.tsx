@@ -19,6 +19,18 @@ interface Challenge {
   };
 }
 
+interface DBResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+interface DB {
+  execute(query: string): Promise<DBResponse>;
+}
+
+declare const db: DB;
+
 export default function SQLInjectionPreventerPage() {
   const router = useRouter();
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -34,7 +46,7 @@ export default function SQLInjectionPreventerPage() {
       type: "Basic SQL Injection",
       description: "A login form is vulnerable to SQL injection. Identify the secure way to handle user input:",
       code: `
-function loginUser(username, password) {
+function loginUser(username: string, password: string): Promise<DBResponse> {
   const query = "SELECT * FROM users WHERE username='" + 
     username + "' AND password='" + password + "'";
   return db.execute(query);
@@ -65,7 +77,7 @@ function loginUser(username, password) {
       type: "UNION Attack Prevention",
       description: "This query is vulnerable to UNION-based SQL injection. How would you fix it?",
       code: `
-function getProducts(category) {
+function getProducts(category: string | number): Promise<DBResponse> {
   const query = "SELECT name, price FROM products WHERE category = " + category;
   return db.execute(query);
 }`,
@@ -95,7 +107,7 @@ function getProducts(category) {
       type: "Blind SQL Injection",
       description: "This search function is vulnerable to blind SQL injection. Select the best fix:",
       code: `
-function searchUsers(searchTerm) {
+function searchUsers(searchTerm: string): Promise<DBResponse> {
   const query = \`SELECT * FROM users WHERE 
     name LIKE '%${searchTerm}%' OR 
     email LIKE '%${searchTerm}%'\`;
@@ -127,7 +139,7 @@ function searchUsers(searchTerm) {
       type: "Mass Assignment",
       description: "This update function is vulnerable to mass assignment. Choose the secure implementation:",
       code: `
-function updateUser(userId, userData) {
+function updateUser(userId: number, userData: Record<string, any>): Promise<DBResponse> {
   const query = "UPDATE users SET " + 
     Object.keys(userData).map(key => 
       \`${key}='${userData[key]}'\`).join(',') + 
@@ -160,12 +172,12 @@ function updateUser(userId, userData) {
       type: "Error-Based Injection",
       description: "This query is vulnerable to error-based SQL injection. How would you prevent information leakage?",
       code: `
-function getUserById(id) {
+function getUserById(id: number): Promise<DBResponse> {
   try {
     const query = "SELECT * FROM users WHERE id = " + id;
     return db.execute(query);
   } catch (error) {
-    throw new Error("Database error: " + error.message);
+    throw new Error("Database error: " + (error as Error).message);
   }
 }`,
       vulnerableQuery: "1 AND EXTRACTVALUE(0,CONCAT(0x7e,VERSION()))",

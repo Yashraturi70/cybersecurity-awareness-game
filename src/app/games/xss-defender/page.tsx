@@ -18,6 +18,19 @@ interface Challenge {
   };
 }
 
+interface SearchResults {
+  users: Array<{ id: number; name: string; }>;
+}
+
+interface CommentDB {
+  comments: {
+    save(comment: string): Promise<void>;
+  };
+}
+
+declare const db: CommentDB;
+declare const commentSection: HTMLElement;
+
 export default function XSSDefenderPage() {
   const router = useRouter();
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -33,8 +46,9 @@ export default function XSSDefenderPage() {
       type: "Reflected XSS",
       description: "A user search form is vulnerable to XSS. Which input would you sanitize to prevent an attack?",
       code: `
-function searchUsers(query) {
+function searchUsers(query: string): void {
   const results = document.getElementById('results');
+  if (!results) return;
   results.innerHTML = 'Search results for: ' + query;
   // ... perform search
 }`,
@@ -63,9 +77,9 @@ function searchUsers(query) {
       type: "Stored XSS",
       description: "A comment system stores user input in a database. Identify the vulnerable code:",
       code: `
-function postComment(comment) {
+async function postComment(comment: string): Promise<void> {
   // Save to database
-  db.comments.save(comment);
+  await db.comments.save(comment);
   // Display comment
   commentSection.innerHTML += comment;
 }`,
@@ -95,7 +109,7 @@ function postComment(comment) {
       description: "This code processes URL parameters. Find the security issue:",
       code: `
 const params = new URLSearchParams(window.location.search);
-const theme = params.get('theme');
+const theme = params.get('theme') || 'default';
 document.body.innerHTML = '<div class="theme-' + theme + '">Welcome!</div>';`,
       options: [
         "Using URLSearchParams is unsafe",

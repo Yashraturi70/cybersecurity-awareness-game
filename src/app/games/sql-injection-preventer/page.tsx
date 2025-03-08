@@ -138,11 +138,12 @@ function searchUsers(searchTerm: string): Promise<DBResponse> {
       id: 4,
       type: "Mass Assignment",
       description: "This update function is vulnerable to mass assignment. Choose the secure implementation:",
-      code: String.raw`
+      code: `
 function updateUser(userId: number, userData: Record<string, any>): Promise<DBResponse> {
   const query = "UPDATE users SET " + 
-    Object.keys(userData).map(field => 
-      "\${field}='\${userData[field]}'").join(',') + 
+    Object.keys(userData).map(function(field) {
+      return field + "='" + userData[field] + "'";
+    }).join(',') + 
     " WHERE id = " + userId;
   return db.execute(query);
 }`,

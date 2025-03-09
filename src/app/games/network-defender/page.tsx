@@ -156,7 +156,7 @@ const networkAttacks: Attack[] = [
 export default function NetworkDefenderPage() {
   const router = useRouter();
   const [gameStarted, setGameStarted] = useState(false);
-  const [budget, setBudget] = useState(100);
+  const [budget, setBudget] = useState(200);
   const [activeDefenses, setActiveDefenses] = useState<string[]>([]);
   const [currentAttack, setCurrentAttack] = useState<Attack | null>(null);
   const [attackHistory, setAttackHistory] = useState<{
@@ -167,15 +167,17 @@ export default function NetworkDefenderPage() {
   const [score, setScore] = useState(0);
   const [round, setRound] = useState(1);
   const [totalPossibleScore, setTotalPossibleScore] = useState(networkAttacks.length * 25);
+  const [showLastAttackResult, setShowLastAttackResult] = useState(false);
 
   const startGame = () => {
     setGameStarted(true);
-    setBudget(100);
+    setBudget(200);
     setActiveDefenses([]);
     setAttackHistory([]);
     setGameOver(false);
     setScore(0);
     setRound(1);
+    setShowLastAttackResult(false);
     launchAttack();
   };
 
@@ -216,13 +218,18 @@ export default function NetworkDefenderPage() {
 
     setAttackHistory(prev => [...prev, attackResult]);
     setScore(prev => hasAllDefenses ? prev + 25 : prev);
-    setRound(prev => prev + 1);
-
+    
     if (round >= networkAttacks.length) {
-      setGameOver(true);
+      setShowLastAttackResult(true);
     } else {
+      setRound(prev => prev + 1);
       launchAttack();
     }
+  };
+
+  const finishGame = () => {
+    setGameOver(true);
+    setShowLastAttackResult(false);
   };
 
   const getSeverityColor = (severity: string) => {
@@ -292,7 +299,7 @@ export default function NetworkDefenderPage() {
             </div>
           ) : (
             <div>
-              {!gameOver ? (
+              {!gameOver && !showLastAttackResult ? (
                 <div className="space-y-6">
                   {/* Status Bar */}
                   <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -459,6 +466,102 @@ export default function NetworkDefenderPage() {
                       </div>
                     </div>
                   )}
+                </div>
+              ) : showLastAttackResult ? (
+                <div className="space-y-6">
+                  {/* Show the last attack result */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Final Attack Result</h3>
+                    {attackHistory.length > 0 && (
+                      <div className={`p-4 rounded-lg ${
+                        attackHistory[attackHistory.length - 1].success
+                          ? 'bg-green-50 dark:bg-green-900/20'
+                          : 'bg-red-50 dark:bg-red-900/20'
+                      }`}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {attackHistory[attackHistory.length - 1].attack.type}
+                          </span>
+                          <span className={
+                            attackHistory[attackHistory.length - 1].success
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }>
+                            {attackHistory[attackHistory.length - 1].success ? 'Defended' : 'Breach'}
+                          </span>
+                        </div>
+                        
+                        {/* Solution for Failed Defenses */}
+                        {!attackHistory[attackHistory.length - 1].success && attackHistory[attackHistory.length - 1].attack.solution && (
+                          <div className="mt-2 mb-4">
+                            <h4 className="font-medium text-gray-800 dark:text-gray-200">Solution:</h4>
+                            <p className="text-gray-600 dark:text-gray-400">{attackHistory[attackHistory.length - 1].attack.solution}</p>
+                          </div>
+                        )}
+
+                        {/* Learning Resources for Failed Defenses */}
+                        {!attackHistory[attackHistory.length - 1].success && attackHistory[attackHistory.length - 1].attack.learningResources && (
+                          <div className="mt-4 bg-white dark:bg-gray-700 p-4 rounded-lg">
+                            <h4 className="font-medium mb-3 text-gray-900 dark:text-white">Learning Resources:</h4>
+                            
+                            {attackHistory[attackHistory.length - 1].attack.learningResources.articles && 
+                             attackHistory[attackHistory.length - 1].attack.learningResources.articles.length > 0 && (
+                              <div className="mb-4">
+                                <h5 className="font-medium mb-2 text-gray-800 dark:text-gray-200">Articles:</h5>
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {attackHistory[attackHistory.length - 1].attack.learningResources.articles.map((article, index) => (
+                                    <li key={index}>
+                                      <a 
+                                        href={article}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                                      >
+                                        {article.includes('cisa.gov') ? 'CISA Security Guide' :
+                                         article.includes('cloudflare.com') ? 'Cloudflare DDoS Guide' :
+                                         article.includes('nist.gov') ? 'NIST Security Guide' :
+                                         article.includes('owasp.org') ? 'OWASP Security Guide' :
+                                         article.includes('sans.org') ? 'SANS Security Guide' :
+                                         article.includes('microsoft.com') ? 'Microsoft Security Guide' :
+                                         'Learn More'}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {attackHistory[attackHistory.length - 1].attack.learningResources.videos && 
+                             attackHistory[attackHistory.length - 1].attack.learningResources.videos.length > 0 && (
+                              <div>
+                                <h5 className="font-medium mb-2 text-gray-800 dark:text-gray-200">Videos:</h5>
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {attackHistory[attackHistory.length - 1].attack.learningResources.videos.map((video, index) => (
+                                    <li key={index}>
+                                      <a 
+                                        href={video}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+                                      >
+                                        Watch Tutorial {index + 1}
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={finishGame}
+                      className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      See Final Results
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">

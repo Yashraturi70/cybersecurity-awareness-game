@@ -33,7 +33,7 @@ const availableDefenses: Defense[] = [
     name: 'Basic Firewall',
     description: 'Blocks unauthorized incoming connections',
     type: 'Firewall',
-    cost: 20,
+    cost: 15,
     effectiveness: 70
   },
   {
@@ -41,7 +41,7 @@ const availableDefenses: Defense[] = [
     name: 'Advanced Firewall',
     description: 'Deep packet inspection and traffic analysis',
     type: 'Firewall',
-    cost: 40,
+    cost: 30,
     effectiveness: 90
   },
   {
@@ -49,7 +49,7 @@ const availableDefenses: Defense[] = [
     name: 'Network IDS',
     description: 'Detects suspicious network activity',
     type: 'IDS',
-    cost: 30,
+    cost: 20,
     effectiveness: 80
   },
   {
@@ -57,7 +57,7 @@ const availableDefenses: Defense[] = [
     name: '2FA System',
     description: 'Two-factor authentication for all users',
     type: 'Authentication',
-    cost: 25,
+    cost: 20,
     effectiveness: 85
   },
   {
@@ -65,7 +65,7 @@ const availableDefenses: Defense[] = [
     name: 'Data Encryption',
     description: 'Encrypts sensitive data in transit',
     type: 'Encryption',
-    cost: 35,
+    cost: 25,
     effectiveness: 95
   }
 ];
@@ -156,7 +156,7 @@ const networkAttacks: Attack[] = [
 export default function NetworkDefenderPage() {
   const router = useRouter();
   const [gameStarted, setGameStarted] = useState(false);
-  const [budget, setBudget] = useState(200);
+  const [budget, setBudget] = useState(150);
   const [activeDefenses, setActiveDefenses] = useState<string[]>([]);
   const [currentAttack, setCurrentAttack] = useState<Attack | null>(null);
   const [attackHistory, setAttackHistory] = useState<{
@@ -168,31 +168,43 @@ export default function NetworkDefenderPage() {
   const [round, setRound] = useState(1);
   const [totalPossibleScore, setTotalPossibleScore] = useState(networkAttacks.length * 25);
   const [showLastAttackResult, setShowLastAttackResult] = useState(false);
+  const [attackOrder, setAttackOrder] = useState<Attack[]>([]);
 
   const startGame = () => {
     setGameStarted(true);
-    setBudget(200);
+    setBudget(150);
     setActiveDefenses([]);
     setAttackHistory([]);
     setGameOver(false);
     setScore(0);
     setRound(1);
     setShowLastAttackResult(false);
-    launchAttack();
+    
+    const orderedAttacks = [...networkAttacks].sort((a, b) => {
+      const costA = a.requiredDefenses.reduce((total, defId) => {
+        const defense = availableDefenses.find(d => d.id === defId);
+        return total + (defense ? defense.cost : 0);
+      }, 0);
+      
+      const costB = b.requiredDefenses.reduce((total, defId) => {
+        const defense = availableDefenses.find(d => d.id === defId);
+        return total + (defense ? defense.cost : 0);
+      }, 0);
+      
+      return costA - costB;
+    });
+    
+    setAttackOrder(orderedAttacks);
+    setCurrentAttack(orderedAttacks[0]);
   };
 
   const launchAttack = () => {
-    const availableAttacks = networkAttacks.filter(
-      attack => !attackHistory.find(history => history.attack.id === attack.id)
-    );
-    
-    if (availableAttacks.length === 0) {
+    if (round > networkAttacks.length) {
       setGameOver(true);
       return;
     }
-
-    const randomAttack = availableAttacks[Math.floor(Math.random() * availableAttacks.length)];
-    setCurrentAttack(randomAttack);
+    
+    setCurrentAttack(attackOrder[round - 1]);
   };
 
   const purchaseDefense = (defense: Defense) => {
@@ -217,7 +229,11 @@ export default function NetworkDefenderPage() {
     };
 
     setAttackHistory(prev => [...prev, attackResult]);
-    setScore(prev => hasAllDefenses ? prev + 25 : prev);
+    
+    if (hasAllDefenses) {
+      setScore(prev => prev + 25);
+      setBudget(prev => prev + 20);
+    }
     
     if (round >= networkAttacks.length) {
       setShowLastAttackResult(true);
@@ -270,7 +286,6 @@ export default function NetworkDefenderPage() {
     }
   };
 
-  // Calculate percentage score
   const calculatePercentageScore = () => {
     return Math.round((score / totalPossibleScore) * 100);
   };
@@ -289,6 +304,8 @@ export default function NetworkDefenderPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Your mission is to defend a corporate network from various cyber attacks.
                 Purchase and deploy security measures within your budget to protect against incoming threats.
+                <br /><br />
+                <strong>Pro tip:</strong> Successfully defending against attacks will earn you additional budget!
               </p>
               <button
                 onClick={startGame}
@@ -301,14 +318,12 @@ export default function NetworkDefenderPage() {
             <div>
               {!gameOver && !showLastAttackResult ? (
                 <div className="space-y-6">
-                  {/* Status Bar */}
                   <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <span className="text-gray-600 dark:text-gray-300">Budget: ${budget}</span>
                     <span className="text-gray-600 dark:text-gray-300">Score: {score} points</span>
                     <span className="text-gray-600 dark:text-gray-300">Round: {round}/{networkAttacks.length}</span>
                   </div>
 
-                  {/* Available Defenses */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Available Defenses</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -348,7 +363,6 @@ export default function NetworkDefenderPage() {
                     </div>
                   </div>
 
-                  {/* Current Attack */}
                   {currentAttack && (
                     <div className="border dark:border-gray-700 rounded-lg p-6">
                       <div className="flex justify-between items-start mb-4">
@@ -374,7 +388,6 @@ export default function NetworkDefenderPage() {
                     </div>
                   )}
 
-                  {/* Attack History */}
                   {attackHistory.length > 0 && (
                     <div>
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Attack History</h3>
@@ -401,7 +414,6 @@ export default function NetworkDefenderPage() {
                               </span>
                             </div>
 
-                            {/* Solution for Failed Defenses */}
                             {!entry.success && entry.attack.solution && (
                               <div className="mt-2 mb-4">
                                 <h4 className="font-medium text-gray-800 dark:text-gray-200">Solution:</h4>
@@ -409,7 +421,6 @@ export default function NetworkDefenderPage() {
                               </div>
                             )}
 
-                            {/* Learning Resources for Failed Defenses */}
                             {!entry.success && entry.attack.learningResources && (
                               <div className="mt-4 bg-white dark:bg-gray-700 p-4 rounded-lg">
                                 <h4 className="font-medium mb-3 text-gray-900 dark:text-white">Learning Resources:</h4>
@@ -469,7 +480,6 @@ export default function NetworkDefenderPage() {
                 </div>
               ) : showLastAttackResult ? (
                 <div className="space-y-6">
-                  {/* Show the last attack result */}
                   <div className="mb-6">
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Final Attack Result</h3>
                     {attackHistory.length > 0 && (
@@ -491,7 +501,6 @@ export default function NetworkDefenderPage() {
                           </span>
                         </div>
                         
-                        {/* Solution for Failed Defenses */}
                         {!attackHistory[attackHistory.length - 1].success && attackHistory[attackHistory.length - 1].attack.solution && (
                           <div className="mt-2 mb-4">
                             <h4 className="font-medium text-gray-800 dark:text-gray-200">Solution:</h4>
@@ -499,7 +508,6 @@ export default function NetworkDefenderPage() {
                           </div>
                         )}
 
-                        {/* Learning Resources for Failed Defenses */}
                         {!attackHistory[attackHistory.length - 1].success && attackHistory[attackHistory.length - 1].attack.learningResources && (
                           <div className="mt-4 bg-white dark:bg-gray-700 p-4 rounded-lg">
                             <h4 className="font-medium mb-3 text-gray-900 dark:text-white">Learning Resources:</h4>

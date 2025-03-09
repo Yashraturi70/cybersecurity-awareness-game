@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navbar from '../../components/Navbar';
 import { useRouter } from 'next/navigation';
 
 interface Attack {
@@ -12,6 +11,7 @@ interface Attack {
   target: string;
   severity: 'Low' | 'Medium' | 'High' | 'Critical';
   requiredDefenses: string[];
+  solution?: string;
   learningResources?: {
     articles?: string[];
     videos?: string[];
@@ -79,6 +79,7 @@ const networkAttacks: Attack[] = [
     target: 'Web Server',
     severity: 'High',
     requiredDefenses: ['fw-advanced', 'ids-basic'],
+    solution: 'Deploy an Advanced Firewall with Network IDS to detect and mitigate distributed attacks.',
     learningResources: {
       articles: [
         "https://www.cisa.gov/news-events/news/understanding-and-responding-distributed-denial-service-attacks",
@@ -98,52 +99,55 @@ const networkAttacks: Attack[] = [
     target: 'Authentication Server',
     severity: 'Medium',
     requiredDefenses: ['auth-2fa', 'fw-basic'],
+    solution: 'Implement 2FA and a Basic Firewall to prevent repeated login attempts.',
     learningResources: {
       articles: [
-        "https://www.nist.gov/blogs/cybersecurity-insights/preventing-brute-force-attacks",
-        "https://owasp.org/www-community/controls/Blocking_Brute_Force_Attacks"
+        "https://www.nist.gov/itl/applied-cybersecurity/tig/back-basics-multi-factor-authentication",
+        "https://www.cisa.gov/news-events/news/implementing-strong-authentication"
       ],
       videos: [
-        "https://www.youtube.com/watch?v=7U-RbOKanYs",
-        "https://www.youtube.com/watch?v=Q7153z9I1Zw"
+        "https://www.youtube.com/watch?v=ZXFYT-BG2So",
+        "https://www.youtube.com/watch?v=UBUNrFtufWo"
       ]
     }
   },
   {
     id: 'mitm-1',
-    type: 'Man in the Middle',
-    description: 'Intercepting network traffic',
-    source: 'Internal Network',
-    target: 'Data Server',
-    severity: 'Critical',
-    requiredDefenses: ['enc-data', 'ids-basic'],
+    type: 'Man-in-the-Middle',
+    description: 'Intercepting unencrypted data between client and server',
+    source: 'Network',
+    target: 'Data Transmission',
+    severity: 'High',
+    requiredDefenses: ['enc-data', 'fw-basic'],
+    solution: 'Use Data Encryption with a Basic Firewall to protect data in transit.',
     learningResources: {
       articles: [
-        "https://www.sans.org/blog/understanding-man-in-the-middle-attacks/",
-        "https://www.microsoft.com/security/blog/2020/04/08/protecting-against-man-in-the-middle-attacks/"
+        "https://www.owasp.org/index.php/Man-in-the-middle_attack",
+        "https://www.cloudflare.com/learning/ssl/what-is-a-man-in-the-middle-attack/"
       ],
       videos: [
-        "https://www.youtube.com/watch?v=opRMrEfAIiI",
-        "https://www.youtube.com/watch?v=IgCHcuCw_RQ"
+        "https://www.youtube.com/watch?v=DgqID9k83oQ",
+        "https://www.youtube.com/watch?v=q3aXnxqHeTc"
       ]
     }
   },
   {
-    id: 'port-scan',
+    id: 'scan-1',
     type: 'Port Scanning',
-    description: 'Scanning for open ports and vulnerabilities',
-    source: '10.0.0.50',
-    target: 'All Systems',
+    description: 'Scanning for open ports and services',
+    source: '10.0.0.5',
+    target: 'Network Infrastructure',
     severity: 'Low',
-    requiredDefenses: ['fw-basic'],
+    requiredDefenses: ['fw-basic', 'ids-basic'],
+    solution: 'Use a Basic Firewall with Network IDS to detect and block port scanning attempts.',
     learningResources: {
       articles: [
-        "https://www.cisa.gov/news-events/news/detecting-and-preventing-port-scanning-attacks",
-        "https://www.sans.org/blog/understanding-port-scanning/"
+        "https://www.sans.org/security-resources/sec560/port_scanning_basics_pdf",
+        "https://nmap.org/book/port-scanning-basics.html"
       ],
       videos: [
-        "https://www.youtube.com/watch?v=h8PLDguZ4ME",
-        "https://www.youtube.com/watch?v=4PZb0Vy8tIs"
+        "https://www.youtube.com/watch?v=GJ55rcKSlnE",
+        "https://www.youtube.com/watch?v=3Od2vDL-0Mo"
       ]
     }
   }
@@ -162,6 +166,7 @@ export default function NetworkDefenderPage() {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [round, setRound] = useState(1);
+  const [totalPossibleScore, setTotalPossibleScore] = useState(networkAttacks.length * 25);
 
   const startGame = () => {
     setGameStarted(true);
@@ -258,9 +263,13 @@ export default function NetworkDefenderPage() {
     }
   };
 
+  // Calculate percentage score
+  const calculatePercentageScore = () => {
+    return Math.round((score / totalPossibleScore) * 100);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Network Defender Challenge</h1>
@@ -288,7 +297,7 @@ export default function NetworkDefenderPage() {
                   {/* Status Bar */}
                   <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <span className="text-gray-600 dark:text-gray-300">Budget: ${budget}</span>
-                    <span className="text-gray-600 dark:text-gray-300">Score: {score}</span>
+                    <span className="text-gray-600 dark:text-gray-300">Score: {score} points</span>
                     <span className="text-gray-600 dark:text-gray-300">Round: {round}/{networkAttacks.length}</span>
                   </div>
 
@@ -385,6 +394,14 @@ export default function NetworkDefenderPage() {
                               </span>
                             </div>
 
+                            {/* Solution for Failed Defenses */}
+                            {!entry.success && entry.attack.solution && (
+                              <div className="mt-2 mb-4">
+                                <h4 className="font-medium text-gray-800 dark:text-gray-200">Solution:</h4>
+                                <p className="text-gray-600 dark:text-gray-400">{entry.attack.solution}</p>
+                              </div>
+                            )}
+
                             {/* Learning Resources for Failed Defenses */}
                             {!entry.success && entry.attack.learningResources && (
                               <div className="mt-4 bg-white dark:bg-gray-700 p-4 rounded-lg">
@@ -447,7 +464,7 @@ export default function NetworkDefenderPage() {
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Challenge Complete!</h2>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    You scored {score}% on the Network Defender challenge!
+                    You scored {calculatePercentageScore()}% on the Network Defender challenge!
                   </p>
                   <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 justify-center">
                     <button

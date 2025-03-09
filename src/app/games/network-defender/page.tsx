@@ -25,6 +25,8 @@ interface Defense {
   type: 'Firewall' | 'IDS' | 'Authentication' | 'Encryption';
   cost: number;
   effectiveness: number;
+  maintenanceCost?: number;
+  incompatibleWith?: string[];
 }
 
 const availableDefenses: Defense[] = [
@@ -34,7 +36,8 @@ const availableDefenses: Defense[] = [
     description: 'Blocks unauthorized incoming connections',
     type: 'Firewall',
     cost: 15,
-    effectiveness: 70
+    effectiveness: 70,
+    maintenanceCost: 5
   },
   {
     id: 'fw-advanced',
@@ -42,7 +45,9 @@ const availableDefenses: Defense[] = [
     description: 'Deep packet inspection and traffic analysis',
     type: 'Firewall',
     cost: 30,
-    effectiveness: 90
+    effectiveness: 90,
+    maintenanceCost: 10,
+    incompatibleWith: ['fw-basic']
   },
   {
     id: 'ids-basic',
@@ -50,7 +55,8 @@ const availableDefenses: Defense[] = [
     description: 'Detects suspicious network activity',
     type: 'IDS',
     cost: 20,
-    effectiveness: 80
+    effectiveness: 80,
+    maintenanceCost: 8
   },
   {
     id: 'auth-2fa',
@@ -58,7 +64,8 @@ const availableDefenses: Defense[] = [
     description: 'Two-factor authentication for all users',
     type: 'Authentication',
     cost: 20,
-    effectiveness: 85
+    effectiveness: 85,
+    maintenanceCost: 5
   },
   {
     id: 'enc-data',
@@ -66,7 +73,8 @@ const availableDefenses: Defense[] = [
     description: 'Encrypts sensitive data in transit',
     type: 'Encryption',
     cost: 25,
-    effectiveness: 95
+    effectiveness: 95,
+    maintenanceCost: 8
   }
 ];
 
@@ -156,7 +164,7 @@ const networkAttacks: Attack[] = [
 export default function NetworkDefenderPage() {
   const router = useRouter();
   const [gameStarted, setGameStarted] = useState(false);
-  const [budget, setBudget] = useState(150);
+  const [budget, setBudget] = useState(100);
   const [activeDefenses, setActiveDefenses] = useState<string[]>([]);
   const [currentAttack, setCurrentAttack] = useState<Attack | null>(null);
   const [attackHistory, setAttackHistory] = useState<{
@@ -169,16 +177,19 @@ export default function NetworkDefenderPage() {
   const [totalPossibleScore, setTotalPossibleScore] = useState(networkAttacks.length * 25);
   const [showLastAttackResult, setShowLastAttackResult] = useState(false);
   const [attackOrder, setAttackOrder] = useState<Attack[]>([]);
+  const [maxActiveDefenses] = useState(3);
+  const [maintenanceCosts, setMaintenanceCosts] = useState(0);
 
   const startGame = () => {
     setGameStarted(true);
-    setBudget(150);
+    setBudget(100);
     setActiveDefenses([]);
     setAttackHistory([]);
     setGameOver(false);
     setScore(0);
     setRound(1);
     setShowLastAttackResult(false);
+    setMaintenanceCosts(0);
     
     const orderedAttacks = [...networkAttacks].sort((a, b) => {
       const costA = a.requiredDefenses.reduce((total, defId) => {
@@ -204,13 +215,48 @@ export default function NetworkDefenderPage() {
       return;
     }
     
+    const totalMaintenance = activeDefenses.reduce((total, defId) => {
+      const defense = availableDefenses.find(d => d.id === defId);
+      return total + (defense?.maintenanceCost || 0);
+    }, 0);
+    
+    setBudget(prev => Math.max(0, prev - totalMaintenance));
+    setMaintenanceCosts(totalMaintenance);
+    
     setCurrentAttack(attackOrder[round - 1]);
   };
 
+  const isDefenseCompatible = (defenseId: string) => {
+    const defense = availableDefenses.find(d => d.id === defenseId);
+    if (!defense || !defense.incompatibleWith) return true;
+    
+    return !defense.incompatibleWith.some(incompatibleId => 
+      activeDefenses.includes(incompatibleId)
+    );
+  };
+
   const purchaseDefense = (defense: Defense) => {
+    if (activeDefenses.length >= maxActiveDefenses && !activeDefenses.includes(defense.id)) {
+      alert("You've reached the maximum number of active defenses. Deactivate one before adding another.");
+      return;
+    }
+    
+    if (!isDefenseCompatible(defense.id)) {
+      alert(`${defense.name} is not compatible with your current defenses.`);
+      return;
+    }
+    
     if (budget >= defense.cost && !activeDefenses.includes(defense.id)) {
       setBudget(prev => prev - defense.cost);
       setActiveDefenses(prev => [...prev, defense.id]);
+    }
+  };
+
+  const removeDefense = (defenseId: string) => {
+    setActiveDefenses(prev => prev.filter(id => id !== defenseId));
+    const defense = availableDefenses.find(d => d.id === defenseId);
+    if (defense) {
+      setBudget(prev => prev + Math.floor(defense.cost / 2));
     }
   };
 
@@ -232,7 +278,7 @@ export default function NetworkDefenderPage() {
     
     if (hasAllDefenses) {
       setScore(prev => prev + 25);
-      setBudget(prev => prev + 20);
+      setBudget(prev => prev + 25);
     }
     
     if (round >= networkAttacks.length) {
@@ -305,7 +351,14 @@ export default function NetworkDefenderPage() {
                 Your mission is to defend a corporate network from various cyber attacks.
                 Purchase and deploy security measures within your budget to protect against incoming threats.
                 <br /><br />
-                <strong>Pro tip:</strong> Successfully defending against attacks will earn you additional budget!
+                <strong>Strategic considerations:</strong>
+                <ul className="list-disc text-left max-w-md mx-auto mt-2 space-y-1">
+                  <li>You can only have {maxActiveDefenses} active defenses at a time</li>
+                  <li>Some defenses are incompatible with each other</li>
+                  <li>Each defense has a maintenance cost per round</li>
+                  <li>Successfully defending against attacks earns budget rewards</li>
+                  <li>You can deactivate defenses to recover some of their cost</li>
+                </ul>
               </p>
               <button
                 onClick={startGame}
@@ -324,42 +377,110 @@ export default function NetworkDefenderPage() {
                     <span className="text-gray-600 dark:text-gray-300">Round: {round}/{networkAttacks.length}</span>
                   </div>
 
+                  {maintenanceCosts > 0 && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-lg text-sm">
+                      Maintenance costs: ${maintenanceCosts} per round for active defenses
+                    </div>
+                  )}
+
                   <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Active Defenses ({activeDefenses.length}/{maxActiveDefenses})</h3>
+                    </div>
+                    
+                    {activeDefenses.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        {activeDefenses.map(defenseId => {
+                          const defense = availableDefenses.find(d => d.id === defenseId);
+                          if (!defense) return null;
+                          
+                          return (
+                            <div key={defense.id} className="p-4 border border-green-500 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-gray-900 dark:text-white">{defense.name}</h4>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  Maintenance: ${defense.maintenanceCost}/round
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{defense.description}</p>
+                              <button
+                                onClick={() => removeDefense(defense.id)}
+                                className="w-full px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+                              >
+                                Deactivate (Refund ${Math.floor(defense.cost / 2)})
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 mb-6">No active defenses. Purchase defenses below.</p>
+                    )}
+
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Available Defenses</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {availableDefenses.map(defense => (
-                        <div
-                          key={defense.id}
-                          className={`p-4 border rounded-lg ${
-                            activeDefenses.includes(defense.id)
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                              : 'border-gray-200 dark:border-gray-700'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-gray-900 dark:text-white">{defense.name}</h4>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Cost: ${defense.cost}</span>
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{defense.description}</p>
-                          <button
-                            onClick={() => purchaseDefense(defense)}
-                            disabled={budget < defense.cost || activeDefenses.includes(defense.id)}
-                            className={`w-full px-4 py-2 rounded-md ${
-                              activeDefenses.includes(defense.id)
-                                ? 'bg-green-500 text-white'
-                                : budget < defense.cost
-                                ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                      {availableDefenses.map(defense => {
+                        const isActive = activeDefenses.includes(defense.id);
+                        const canAfford = budget >= defense.cost;
+                        const isCompatible = isDefenseCompatible(defense.id);
+                        const hasSpace = activeDefenses.length < maxActiveDefenses || isActive;
+                        
+                        return (
+                          <div
+                            key={defense.id}
+                            className={`p-4 border rounded-lg ${
+                              isActive
+                                ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                : !isCompatible
+                                ? 'border-red-200 bg-red-50 dark:bg-red-900/10'
+                                : !hasSpace
+                                ? 'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10'
+                                : 'border-gray-200 dark:border-gray-700'
                             }`}
                           >
-                            {activeDefenses.includes(defense.id)
-                              ? 'Deployed'
-                              : budget < defense.cost
-                              ? 'Insufficient Budget'
-                              : 'Purchase & Deploy'}
-                          </button>
-                        </div>
-                      ))}
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-medium text-gray-900 dark:text-white">{defense.name}</h4>
+                              <div className="text-right">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Cost: ${defense.cost}</span>
+                                <br />
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  Maintenance: ${defense.maintenanceCost}/round
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{defense.description}</p>
+                            {defense.incompatibleWith && defense.incompatibleWith.length > 0 && (
+                              <p className="text-xs text-red-600 dark:text-red-400 mb-4">
+                                Not compatible with: {defense.incompatibleWith.map(id => {
+                                  const incompatibleDefense = availableDefenses.find(d => d.id === id);
+                                  return incompatibleDefense ? incompatibleDefense.name : id;
+                                }).join(', ')}
+                              </p>
+                            )}
+                            <button
+                              onClick={() => purchaseDefense(defense)}
+                              disabled={isActive || !canAfford || !isCompatible || !hasSpace}
+                              className={`w-full px-4 py-2 rounded-md ${
+                                isActive
+                                  ? 'bg-green-500 text-white'
+                                  : !canAfford || !isCompatible || !hasSpace
+                                  ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              {isActive
+                                ? 'Deployed'
+                                : !canAfford
+                                ? 'Insufficient Budget'
+                                : !isCompatible
+                                ? 'Incompatible with Active Defenses'
+                                : !hasSpace
+                                ? 'Maximum Defenses Reached'
+                                : 'Purchase & Deploy'}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

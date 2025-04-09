@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function HomePage() {
   const router = useRouter();
@@ -26,6 +27,31 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Navigation */}
+      <nav className="bg-white dark:bg-gray-800 shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <span className="text-xl font-bold text-blue-600 dark:text-blue-500">CyberSecurity Game</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/login"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Register
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="relative bg-white dark:bg-gray-800 overflow-hidden">
         <div className="max-w-7xl mx-auto">
@@ -39,15 +65,19 @@ export default function HomePage() {
                 <p className="mt-3 text-base text-gray-500 dark:text-gray-300 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
                   Enhance your cybersecurity skills with our interactive platform. Learn through hands-on challenges and real-world scenarios.
                 </p>
-                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                  <div className="rounded-md shadow">
-                    <button
-                      onClick={() => router.push('/learn')}
-                      className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
-                    >
-                      Get Started
-                    </button>
-                  </div>
+                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start space-x-4">
+                  <Link
+                    href="/register"
+                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
+                  >
+                    Get Started
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 md:py-4 md:text-lg md:px-10"
+                  >
+                    Sign In
+                  </Link>
                 </div>
               </div>
             </main>
@@ -94,12 +124,20 @@ export default function HomePage() {
           <p className="mt-4 text-lg leading-6 text-blue-100">
             Start your journey today with our interactive challenges.
           </p>
-          <button
-            onClick={() => router.push('/learn')}
-            className="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 sm:w-auto"
-          >
-            Get Started
-          </button>
+          <div className="mt-8 flex justify-center space-x-4">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800"
+            >
+              Sign In
+            </Link>
+          </div>
         </div>
       </div>
     </div>

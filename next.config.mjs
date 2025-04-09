@@ -4,6 +4,7 @@ const nextConfig = {
   swcMinify: true,
   experimental: {
     optimizeFonts: false,
+    esmExternals: true
   },
   images: {
     remotePatterns: [

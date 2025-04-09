@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { UserModel } from '../../../../models/User';
+import { UserModel } from 'src/models/User';
 import jwt from 'jsonwebtoken';
 
 export async function POST(request: Request) {

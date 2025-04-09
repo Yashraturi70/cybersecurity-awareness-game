@@ -31,7 +31,8 @@ export class UserModel {
       'SELECT * FROM users WHERE email = ?',
       [email]
     );
-    return (rows as User[])[0] || null;
+    const users = rows as User[];
+    return users.length > 0 ? users[0] : null;
   }
 
   static async verifyPassword(user: User, password: string): Promise<boolean> {
@@ -47,7 +48,7 @@ export class UserModel {
 
   static async getUserScores(userId: number): Promise<UserScore[]> {
     const [rows] = await pool.execute(
-      'SELECT * FROM user_scores WHERE user_id = ?',
+      'SELECT * FROM user_scores WHERE user_id = ? ORDER BY completed_at DESC',
       [userId]
     );
     return rows as UserScore[];
